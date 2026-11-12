@@ -1,0 +1,857 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Web Usage Mining Dashboard</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #172033;
+        }
+
+        /* Header */
+        header {
+            background: #14213d;
+            color: white;
+            padding: 25px 5%;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+            font-size: 26px;
+        }
+
+        header p {
+            margin: 0;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+
+        /* Main container */
+        main {
+            width: 100%;
+            max-width: 1250px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            margin: 30px 0 15px;
+            font-size: 22px;
+        }
+
+        /* Summary cards */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fit,
+                minmax(220px, 1fr)
+            );
+            gap: 18px;
+        }
+
+        .card,
+        .panel {
+            min-width: 0;
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px #0000000d;
+        }
+
+        .card h3 {
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 0;
+        }
+
+        .number {
+            font-size: 27px;
+            font-weight: bold;
+            color: #2563eb;
+            overflow-wrap: anywhere;
+        }
+
+        /* Chart layout */
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fit,
+                minmax(min(100%, 300px), 1fr)
+            );
+            gap: 20px;
+        }
+
+        .panel h2 {
+            font-size: 19px;
+            margin-top: 0;
+            margin-bottom: 18px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 320px;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #eff6ff;
+            color: #1e3a8a;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        #clusterTable table {
+            min-width: 850px;
+        }
+
+        #popularTable table {
+            min-width: 450px;
+        }
+
+        /* Cluster information */
+        .cluster-info {
+            line-height: 1.7;
+            color: #475569;
+            font-size: 14px;
+        }
+
+        .cluster-count {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        /* Status message */
+        .status {
+            margin: 20px 0;
+            color: #15803d;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #dc2626;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        /* Tablet and mobile */
+        @media (max-width: 768px) {
+            header {
+                padding: 22px 20px;
+            }
+
+            header h1 {
+                font-size: 22px;
+            }
+
+            main {
+                margin: 20px auto;
+                padding: 0 14px;
+            }
+
+            .section-title {
+                font-size: 20px;
+            }
+
+            .chart-container {
+                height: 280px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .charts {
+                grid-template-columns: 1fr;
+            }
+
+            .card,
+            .panel {
+                padding: 16px;
+            }
+
+            .number {
+                font-size: 24px;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+
+            th,
+            td {
+                padding: 9px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Web Usage Mining Dashboard</h1>
+
+    <p>
+        NASA HTTP Server Log Analysis using
+        Apache Spark and Machine Learning
+    </p>
+</header>
+
+<main>
+
+    <!-- SUMMARY CARDS -->
+
+    <h2 class="section-title">Website Overview</h2>
+
+    <section class="cards">
+
+        <div class="card">
+            <h3>Total Requests</h3>
+            <div class="number" id="requests">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h3>Unique Visitors</h3>
+            <div class="number" id="visitors">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h3>Total Response Bytes</h3>
+            <div class="number" id="bytes">Loading...</div>
+        </div>
+
+    </section>
+
+
+    <!-- WEBSITE ANALYTICS -->
+
+    <h2 class="section-title">Website Analytics</h2>
+
+    <section class="charts">
+
+        <div class="panel">
+            <h2>HTTP Status Codes</h2>
+
+            <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Daily Website Traffic</h2>
+
+            <div class="chart-container">
+                <canvas id="trafficChart"></canvas>
+            </div>
+        </div>
+
+    </section>
+
+
+    <!-- POPULAR PAGES -->
+
+    <h2 class="section-title">Popular Pages</h2>
+
+    <section class="panel">
+
+        <h2>Top 10 Most Visited Pages</h2>
+
+        <div id="popularTable" class="table-wrapper">
+            Loading pages...
+        </div>
+
+    </section>
+
+
+    <!-- MACHINE LEARNING -->
+
+    <h2 class="section-title">Machine Learning Analysis</h2>
+
+    <section class="charts">
+
+        <div class="panel">
+            <h2>K-Means Visitor Distribution</h2>
+
+            <div class="chart-container">
+                <canvas id="clusterChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+
+            <h2>Cluster Information</h2>
+
+            <p class="cluster-info">
+                K-Means clustering groups website visitors
+                according to their browsing behavior.
+
+                The algorithm analyzes:
+            </p>
+
+            <ul class="cluster-info">
+                <li>Total requests</li>
+                <li>Unique pages visited</li>
+                <li>Total response bytes</li>
+                <li>Failed requests</li>
+            </ul>
+
+            <div id="clusterCount" class="cluster-count">
+                Loading clusters...
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CLUSTER STATISTICS -->
+
+    <section class="panel" style="margin-top:20px;">
+
+        <h2>K-Means Cluster Statistics</h2>
+
+        <div id="clusterTable" class="table-wrapper">
+            Loading cluster data...
+        </div>
+
+    </section>
+
+
+    <!-- STATUS MESSAGE -->
+
+    <p class="status" id="message">
+        Connecting to Flask API...
+    </p>
+
+</main>
+
+
+<footer>
+    Web Usage Mining Project |
+    Apache Spark | PySpark | Flask | K-Means
+</footer>
+
+
+<script>
+
+    let statusChart = null;
+    let trafficChart = null;
+    let clusterChart = null;
+
+
+    // FORMAT NUMBERS
+
+    function formatNumber(value) {
+
+        return Number(value || 0).toLocaleString("en-IN", {
+            maximumFractionDigits: 2
+        });
+
+    }
+
+
+    // CREATE TABLE
+
+    function createTable(containerId, columns, rows) {
+
+        const container = document.getElementById(containerId);
+
+        if (!rows || rows.length === 0) {
+
+            container.textContent = "No data available.";
+
+            return;
+        }
+
+        const table = document.createElement("table");
+
+        const thead = document.createElement("thead");
+
+        const headerRow = document.createElement("tr");
+
+
+        columns.forEach(column => {
+
+            const th = document.createElement("th");
+
+            th.textContent = column.label;
+
+            headerRow.appendChild(th);
+
+        });
+
+
+        thead.appendChild(headerRow);
+
+
+        const tbody = document.createElement("tbody");
+
+
+        rows.forEach(row => {
+
+            const tr = document.createElement("tr");
+
+
+            columns.forEach(column => {
+
+                const td = document.createElement("td");
+
+                td.textContent = column.format
+                    ? column.format(row[column.key])
+                    : row[column.key];
+
+                tr.appendChild(td);
+
+            });
+
+
+            tbody.appendChild(tr);
+
+        });
+
+
+        table.append(thead, tbody);
+
+        container.replaceChildren(table);
+
+    }
+
+
+    // LOAD DASHBOARD DATA
+
+    async function loadDashboard() {
+
+        const message = document.getElementById("message");
+
+        try {
+
+            const response = await fetch("/api/dashboard");
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "API error: HTTP " + response.status
+                );
+
+            }
+
+
+            const data = await response.json();
+
+
+            if (data.error) {
+
+                throw new Error(data.error);
+
+            }
+
+
+            // 1. SUMMARY CARDS
+
+            document.getElementById("requests").textContent =
+                formatNumber(data.total_requests);
+
+
+            document.getElementById("visitors").textContent =
+                formatNumber(data.unique_visitors);
+
+
+            document.getElementById("bytes").textContent =
+                formatNumber(data.total_bytes);
+
+
+
+            // 2. HTTP STATUS CHART
+
+            if (statusChart) {
+
+                statusChart.destroy();
+
+            }
+
+
+            statusChart = new Chart(
+
+                document.getElementById("statusChart"),
+
+                {
+
+                    type: "doughnut",
+
+                    data: {
+
+                        labels: data.status_summary.map(
+                            row => "HTTP " + row.status
+                        ),
+
+                        datasets: [{
+
+                            label: "Requests",
+
+                            data: data.status_summary.map(
+                                row => Number(row.total)
+                            )
+
+                        }]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+                                position: "bottom"
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            );
+
+
+
+            // 3. DAILY TRAFFIC CHART
+
+            if (trafficChart) {
+
+                trafficChart.destroy();
+
+            }
+
+
+            trafficChart = new Chart(
+
+                document.getElementById("trafficChart"),
+
+                {
+
+                    type: "line",
+
+                    data: {
+
+                        labels: data.daily_traffic.map(
+                            row => row.request_date
+                        ),
+
+                        datasets: [{
+
+                            label: "Daily Requests",
+
+                            data: data.daily_traffic.map(
+                                row => Number(row.total_requests)
+                            ),
+
+                            borderWidth: 2,
+
+                            tension: 0.25,
+
+                            fill: false
+
+                        }]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        scales: {
+
+                            y: {
+
+                                beginAtZero: true
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            );
+
+
+
+            // 4. POPULAR PAGES TABLE
+
+            createTable(
+
+                "popularTable",
+
+                [
+
+                    {
+                        key: "url",
+                        label: "Page"
+                    },
+
+                    {
+
+                        key: "visits",
+
+                        label: "Requests",
+
+                        format: formatNumber
+
+                    }
+
+                ],
+
+                data.popular_pages
+
+            );
+
+
+
+            // 5. K-MEANS VISITOR DISTRIBUTION
+
+            const clusters = data.cluster_summary;
+
+
+            if (clusterChart) {
+
+                clusterChart.destroy();
+
+            }
+
+
+            clusterChart = new Chart(
+
+                document.getElementById("clusterChart"),
+
+                {
+
+                    type: "bar",
+
+                    data: {
+
+                        labels: clusters.map(
+                            row => "Cluster " + row.cluster
+                        ),
+
+                        datasets: [{
+
+                            label: "Number of Visitors",
+
+                            data: clusters.map(
+                                row => Number(row.visitor_count)
+                            ),
+
+                            borderWidth: 1
+
+                        }]
+
+                    },
+
+                    options: {
+
+                        indexAxis: "y",
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+
+                                display: false
+
+                            }
+
+                        },
+
+                        scales: {
+
+                            x: {
+
+                                beginAtZero: true
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            );
+
+
+
+            // 6. CLUSTER INFORMATION
+
+            const totalClusters = clusters.length;
+
+            document.getElementById("clusterCount").textContent =
+
+                totalClusters + " visitor groups identified. Total visitors: " +
+
+                formatNumber(data.unique_visitors);
+
+
+
+            // 7. K-MEANS STATISTICS TABLE
+
+            createTable(
+
+                "clusterTable",
+
+                [
+
+                    {
+
+                        key: "cluster",
+
+                        label: "Cluster"
+
+                    },
+
+                    {
+
+                        key: "visitor_count",
+
+                        label: "Visitors",
+
+                        format: formatNumber
+
+                    },
+
+                    {
+
+                        key: "avg_requests",
+
+                        label: "Average Requests",
+
+                        format: value => Number(value).toFixed(2)
+
+                    },
+
+                    {
+
+                        key: "avg_unique_pages",
+
+                        label: "Average Unique Pages",
+
+                        format: value => Number(value).toFixed(2)
+
+                    },
+
+                    {
+
+                        key: "avg_bytes",
+
+                        label: "Average Bytes",
+
+                        format: formatNumber
+
+                    },
+
+                    {
+
+                        key: "avg_failed_requests",
+
+                        label: "Average Failed Requests",
+
+                        format: value => Number(value).toFixed(2)
+
+                    }
+
+                ],
+
+                clusters
+
+            );
+
+
+
+            // SUCCESS MESSAGE
+
+            message.textContent =
+
+                "Dashboard loaded successfully. All analytics are connected.";
+
+            message.className = "status";
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            message.textContent =
+
+                "Dashboard loading failed: " + error.message;
+
+            message.className = "status error";
+
+        }
+
+    }
+
+
+    // START DASHBOARD
+
+    loadDashboard();
+
+</script>
+
+</body>
+</html>
